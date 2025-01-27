@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import supabase from "../supabase";
 import "../style.css";
+import { useAuth } from "../utils/authContext"; // Import your auth context
 
 const CATEGORIES = [
   { name: "computer science", color: "#3b82f6" },
@@ -71,7 +72,8 @@ function Loader() {
 }
 
 function Header({ showForm, setShowForm }) {
-  const appTitle = "Jec Lens";
+  const appTitle = "Jec Insider";
+  const { user } = useAuth(); // Access user from the auth context
 
   return (
     <header className="header">
@@ -80,12 +82,14 @@ function Header({ showForm, setShowForm }) {
         <h1>{appTitle}</h1>
       </div>
 
-      <button
-        className="btn btn-large btn-open"
-        onClick={() => setShowForm((show) => !show)}
-      >
-        {showForm ? "Close" : "Share a News"}
-      </button>
+      {user && ( // Render button only if the user is logged in
+        <button
+          className="btn btn-large btn-open"
+          onClick={() => setShowForm((show) => !show)}
+        >
+          {showForm ? "Close" : "Share a News"}
+        </button>
+      )}
     </header>
   );
 }
@@ -218,11 +222,17 @@ function FactList({ facts, setFacts }) {
 
 function Fact({ fact, setFacts }) {
   const [isUpdating, setIsUpdating] = useState(false);
+  const { user } = useAuth(); // Get the logged-in user
+  const votedFacts = JSON.parse(localStorage.getItem("votedFacts")) || {}; // Load voted facts
+
+  const hasVoted = votedFacts[fact.id]; // Check if the user has voted for this fact
 
   const categoryColor =
     CATEGORIES.find((cat) => cat.name === fact.category)?.color || "#ccc";
 
   async function handleVote(columnName) {
+    if (!user || hasVoted) return; // Prevent voting if the user has already voted or is not logged in
+
     setIsUpdating(true);
     const { data: updatedFact, error } = await supabase
       .from("facts")
@@ -235,6 +245,10 @@ function Fact({ fact, setFacts }) {
       setFacts((facts) =>
         facts.map((f) => (f.id === fact.id ? updatedFact[0] : f))
       );
+
+      // Save the voted fact to localStorage
+      const updatedVotedFacts = { ...votedFacts, [fact.id]: true };
+      localStorage.setItem("votedFacts", JSON.stringify(updatedVotedFacts));
     }
   }
 
@@ -250,13 +264,22 @@ function Fact({ fact, setFacts }) {
         {fact.category}
       </span>
       <div className="vote-buttons">
-        <button onClick={() => handleVote("votesInteresting")}>
+        <button
+          onClick={() => handleVote("votesInteresting")}
+          disabled={!user || isUpdating || hasVoted} // Disable if not logged in, updating, or already voted
+        >
           👍 {fact.votesInteresting}
         </button>
-        <button onClick={() => handleVote("votesMindblowing")}>
+        <button
+          onClick={() => handleVote("votesMindblowing")}
+          disabled={!user || isUpdating || hasVoted} // Disable if not logged in, updating, or already voted
+        >
           🤯 {fact.votesMindblowing}
         </button>
-        <button onClick={() => handleVote("votesFalse")}>
+        <button
+          onClick={() => handleVote("votesFalse")}
+          disabled={!user || isUpdating || hasVoted} // Disable if not logged in, updating, or already voted
+        >
           ⛔️ {fact.votesFalse}
         </button>
       </div>
@@ -265,3 +288,4 @@ function Fact({ fact, setFacts }) {
 }
 
 export default App;
+
