@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import supabase from "../supabase";
 import "../style.css";
-import { useAuth } from "../utils/authContext"; // Import your auth context
+import { useAuth } from "../utils/authContext";
 
 const CATEGORIES = [
   { name: "computer science", color: "#3b82f6" },
@@ -16,14 +16,15 @@ const CATEGORIES = [
   { name: "Clubs", color: "#BDD09F" },
 ];
 
+const MAX_TEXT_LENGTH = 200;
+
 function isValidHttpUrl(string) {
-  let url;
   try {
-    url = new URL(string);
-  } catch (_) {
+    const url = new URL(string);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
     return false;
   }
-  return url.protocol === "http:" || url.protocol === "https:";
 }
 
 function App() {
@@ -31,33 +32,41 @@ function App() {
   const [facts, setFacts] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [currentCategory, setCurrentCategory] = useState("all");
+  const { user } = useAuth();
 
   useEffect(() => {
     async function getFacts() {
       setIsLoading(true);
       let query = supabase.from("facts").select("*");
-
+  
+      // Only show approved facts to regular users
+      if (user?.email !== "ayushoficial04@gmail.com") {
+        query = query.eq("approved", true);
+      }
+  
+      // Filter by category if selected
       if (currentCategory !== "all") {
         query = query.eq("category", currentCategory);
       }
-
-      const { data: facts, error } = await query
+  
+      const { data, error } = await query
         .order("votesInteresting", { ascending: false })
         .limit(1000);
-
-      if (!error) setFacts(facts);
-      else alert("There was a problem getting data");
+  
+      if (!error) setFacts(data || []);
+      else console.error("Error fetching facts:", error);
+  
       setIsLoading(false);
     }
+  
     getFacts();
-  }, [currentCategory]);
+  }, [currentCategory, user]);
+  
 
   return (
     <>
       <Header showForm={showForm} setShowForm={setShowForm} />
-      {showForm ? (
-        <NewFactForm setFacts={setFacts} setShowForm={setShowForm} />
-      ) : null}
+      {showForm && <NewFactForm setFacts={setFacts} setShowForm={setShowForm} />}
 
       <main className="main">
         <CategoryFilter setCurrentCategory={setCurrentCategory} />
@@ -73,7 +82,7 @@ function Loader() {
 
 function Header({ showForm, setShowForm }) {
   const appTitle = "Jec Insider";
-  const { user } = useAuth(); // Access user from the auth context
+  const { user } = useAuth();
 
   return (
     <header className="header">
@@ -81,15 +90,13 @@ function Header({ showForm, setShowForm }) {
         <img src="logo.png" height="68" width="68" alt="Jec Lens Logo" />
         <h1>{appTitle}</h1>
       </div>
-
-      {user && ( // Render button only if the user is logged in
-        <button
-          className="btn btn-large btn-open"
-          onClick={() => setShowForm((show) => !show)}
-        >
-          {showForm ? "Close" : "Share a News"}
-        </button>
-      )}
+      {/* "Post" button is always visible */}
+      <button
+        className="btn btn-large btn-open"
+        onClick={() => setShowForm((prev) => !prev)}
+      >
+        {showForm ? "Close" : "Share a News"}
+      </button>
     </header>
   );
 }
@@ -99,59 +106,59 @@ function NewFactForm({ setFacts, setShowForm }) {
   const [source, setSource] = useState("");
   const [category, setCategory] = useState("");
   const [isUploading, setIsUploading] = useState(false);
-  const textLength = text.length;
+  const { user } = useAuth();
 
-  async function handleSubmit(e) {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
-    const today = new Date().toISOString().split("T")[0];
-    const postCountData = JSON.parse(localStorage.getItem("postCount")) || {};
-
-    if (!postCountData[today]) {
-      postCountData[today] = 0;
-    }
-
-    if (postCountData[today] >= 5) {
-      alert("You can only post up to 5 times per day.");
+  
+    // Check if the user is authenticated
+    if (!user) {
+      alert("You need to be logged in to post a news!");
       return;
     }
-
-    if (text && isValidHttpUrl(source) && category && textLength <= 200) {
+  
+    // Validate form inputs
+    if (text && isValidHttpUrl(source) && category && text.length <= MAX_TEXT_LENGTH) {
       setIsUploading(true);
-
-      const { data: newFact, error } = await supabase
+      const { data, error } = await supabase
         .from("facts")
-        .insert([{ text, source, category }])
+        .insert([{ text, source, category, approved: false }])
         .select();
+  
       setIsUploading(false);
-
+  
       if (!error) {
-        setFacts((facts) => [newFact[0], ...facts]);
+        setFacts((facts) => [data[0], ...facts]);
         setText("");
         setSource("");
         setCategory("");
         setShowForm(false);
-
-        postCountData[today] += 1;
-        localStorage.setItem("postCount", JSON.stringify(postCountData));
+        
+        // Alert the user that their news is under review
+        alert("Your news has been submitted and is under review. It will be accessible soon.");
+      } else {
+        console.error("Error submitting fact:", error);
       }
+    } else {
+      alert("Please fill in all fields correctly.");
     }
-  }
+  };
+  
 
   return (
     <form className="fact-form" onSubmit={handleSubmit}>
       <input
         type="text"
-        placeholder="Share a News with the colleagues..."
+        placeholder="Share a News with colleagues..."
         value={text}
         onChange={(e) => setText(e.target.value)}
         disabled={isUploading}
       />
-      <span>{200 - textLength}</span>
+      <span>{MAX_TEXT_LENGTH - text.length}</span>
       <input
-        value={source}
         type="text"
         placeholder="Trustworthy source..."
+        value={source}
         onChange={(e) => setSource(e.target.value)}
         disabled={isUploading}
       />
@@ -173,6 +180,7 @@ function NewFactForm({ setFacts, setShowForm }) {
     </form>
   );
 }
+
 
 function CategoryFilter({ setCurrentCategory }) {
   return (
@@ -215,42 +223,74 @@ function FactList({ facts, setFacts }) {
         ))}
       </ul>
       <p>There are {facts.length} News in the database. Add your own!</p>
-      <p>Developed and Managed By Ayush Chouksey!</p>
     </section>
   );
 }
-
 function Fact({ fact, setFacts }) {
   const [isUpdating, setIsUpdating] = useState(false);
-  const { user } = useAuth(); // Get the logged-in user
-  const votedFacts = JSON.parse(localStorage.getItem("votedFacts")) || {}; // Load voted facts
-
-  const hasVoted = votedFacts[fact.id]; // Check if the user has voted for this fact
+  const { user } = useAuth();
 
   const categoryColor =
     CATEGORIES.find((cat) => cat.name === fact.category)?.color || "#ccc";
 
-  async function handleVote(columnName) {
-    if (!user || hasVoted) return; // Prevent voting if the user has already voted or is not logged in
+  // Check if the user has already voted on any of the vote fields
+  const hasVotedInteresting = localStorage.getItem(`${fact.id}_votesInteresting`);
+  const hasVotedMindblowing = localStorage.getItem(`${fact.id}_votesMindblowing`);
+  const hasVotedFalse = localStorage.getItem(`${fact.id}_votesFalse`);
+
+  const handleVote = async (columnName) => {
+    if (!user) {
+      alert("You need to be logged in to vote!");
+      return;
+    }
+
+    const voteKey = `${fact.id}_${columnName}`; // Generate a unique key for the vote
+    const hasVoted = localStorage.getItem(voteKey); // Check if the user has already voted on this fact and column
+
+    if (hasVoted) {
+      alert("You have already voted on this fact.");
+      return;
+    }
 
     setIsUpdating(true);
-    const { data: updatedFact, error } = await supabase
+
+    const { data, error } = await supabase
       .from("facts")
       .update({ [columnName]: fact[columnName] + 1 })
       .eq("id", fact.id)
       .select();
+
+    if (!error) {
+      // Store the fact and column name in localStorage to mark that the user has voted
+      localStorage.setItem(voteKey, true);
+
+      setIsUpdating(false);
+      setFacts((facts) => facts.map((f) => (f.id === fact.id ? data[0] : f)));
+    } else {
+      setIsUpdating(false);
+      console.error("Error updating vote:", error);
+    }
+  };
+
+  const handleApprove = async () => {
+    setIsUpdating(true);
+
+    const { data, error } = await supabase
+      .from("facts")
+      .update({ approved: true })
+      .eq("id", fact.id)
+      .select();
+
     setIsUpdating(false);
 
     if (!error) {
       setFacts((facts) =>
-        facts.map((f) => (f.id === fact.id ? updatedFact[0] : f))
+        facts.map((f) => (f.id === fact.id ? data[0] : f))
       );
-
-      // Save the voted fact to localStorage
-      const updatedVotedFacts = { ...votedFacts, [fact.id]: true };
-      localStorage.setItem("votedFacts", JSON.stringify(updatedVotedFacts));
+    } else {
+      console.error("Error approving fact:", error);
     }
-  }
+  };
 
   return (
     <li className="fact">
@@ -266,22 +306,27 @@ function Fact({ fact, setFacts }) {
       <div className="vote-buttons">
         <button
           onClick={() => handleVote("votesInteresting")}
-          disabled={!user || isUpdating || hasVoted} // Disable if not logged in, updating, or already voted
+          disabled={isUpdating || hasVotedInteresting} // Disable if already voted
         >
           👍 {fact.votesInteresting}
         </button>
         <button
           onClick={() => handleVote("votesMindblowing")}
-          disabled={!user || isUpdating || hasVoted} // Disable if not logged in, updating, or already voted
+          disabled={isUpdating || hasVotedMindblowing} // Disable if already voted
         >
           🤯 {fact.votesMindblowing}
         </button>
         <button
           onClick={() => handleVote("votesFalse")}
-          disabled={!user || isUpdating || hasVoted} // Disable if not logged in, updating, or already voted
+          disabled={isUpdating || hasVotedFalse} // Disable if already voted
         >
           ⛔️ {fact.votesFalse}
         </button>
+        {user?.email === "ayushoficial04@gmail.com" && !fact.approved && (
+          <button className="btn-approve" onClick={handleApprove} disabled={isUpdating}>
+            Approve
+          </button>
+        )}
       </div>
     </li>
   );
