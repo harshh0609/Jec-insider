@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../utils/authContext";
 import { jwtDecode } from 'jwt-decode'; // Correct import for jwtDecode
 
+
+
 const Login = () => {
   const { setUser } = useAuth();
   const navigate = useNavigate();
@@ -19,7 +21,9 @@ const Login = () => {
   };
 
   return (
+    
     <div className="login-container">
+      
       <h2 className="login-heading">Welcome! Please Login</h2>
       <div className="google-login-wrapper">
         <GoogleLogin
