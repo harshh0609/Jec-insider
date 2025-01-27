@@ -1,4 +1,4 @@
-* {
+ {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
@@ -12,6 +12,121 @@
     font-family: 'Sono', sans-serif;
     padding: 48px 64px 0px;
   }
+
+  
+  .card-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 2rem; /* Controls the spacing between cards */
+    padding: 1rem;
+  }
+  
+  .custom-card {
+    width: 20rem; /* Slightly bigger cards */
+    padding: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .custom-card:hover {
+    transform: scale(1.05); /* Adds a hover effect */
+    box-shadow: 0px 6px 10px rgba(0, 0, 0, 0.2);
+  }
+  
+  .custom-title {
+    font-size: 1.5rem; /* Larger font size for titles */
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+  }
+  
+  .custom-subtitle {
+    font-size: 1.2rem; /* Slightly larger subtitle */
+    color: #6c757d;
+    margin-bottom: 0.75rem;
+  }
+  
+  .custom-text {
+    font-size: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  .custom-link {
+    font-size: 1rem;
+    color: #007bff;
+    text-decoration: none;
+  }
+  
+  .custom-link:hover {
+    text-decoration: underline;
+  }
+  
+
+
+/* Basic styling for the navbar */
+.navbar {
+  background-color: #00FF0000; /* Dark background color */
+  padding: 10px 20px; /* Padding for the navbar */
+  display: flex; /* Use flexbox for alignment */
+  justify-content:flex-end; /* Align brand on the left, and links on the right */
+  align-items: center; /* Vertically center items */
+}
+
+.navbar-brand {
+  color: #ffffff; /* White color for brand text */
+  font-size: 1.5rem; /* Increase font size */
+  font-weight: bold;
+  text-decoration: none; /* Remove underline from brand link */
+}
+
+.navbar-brand:hover {
+  color: #f8f9fa; /* Light color on hover */
+}
+
+.navbar-nav {
+  display: flex; /* Use flexbox to align nav items horizontally */
+  gap: 20px; /* Add spacing between nav items */
+}
+
+.navbar-nav .nav-item .nav-link {
+  color: #ffffff; /* White color for nav links */
+  font-size: 1rem; /* Set font size */
+  text-decoration: none; /* Remove underline */
+  padding: 10px 15px; /* Padding for links */
+}
+
+.navbar-nav .nav-item .nav-link.active {
+  background-color: #007bff; /* Blue background for active link */
+  color: #ffffff;
+}
+
+.navbar-nav .nav-item .nav-link:hover {
+  background-color: #0056b3; /* Darker blue on hover */
+  color: #ffffff;
+}
+
+/* Mobile responsiveness for navbar */
+@media (max-width: 767px) {
+  .navbar {
+    flex-direction: column; /* Stack items vertically on small screens */
+    align-items: flex-start; /* Align items to the left */
+  }
+
+  .navbar-nav {
+    flex-direction: column; /* Stack nav items vertically on mobile */
+    gap: 10px; /* Adjust spacing for vertical stack */
+    width: 100%; /* Make nav items take full width */
+  }
+
+  .navbar-nav .nav-item .nav-link {
+    color: #ffffff; /* White color for links in mobile view */
+    font-size: 1.2rem; /* Larger font size for mobile */
+    padding: 15px 10px;
+  }
+}
+
 
   /* Main container for the login page */
 .login-container {
@@ -351,4 +466,5 @@
     
       
   }
+  
   
