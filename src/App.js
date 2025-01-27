@@ -23,7 +23,7 @@ const NavLinks = () => {
 
 const App = () => {
   return (
-    <GoogleOAuthProvider clientId="149524377700-r3rbiavbpr9ols4r2aho0tk10389u85p.apps.googleusercontent.com">
+    <GoogleOAuthProvider clientId="1084448620949-emt0e0afuqiuteppubjpokaes10afmm6.apps.googleusercontent.com">
       <AuthProvider>
         <Router>
           <NavLinks />
