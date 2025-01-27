@@ -10,26 +10,14 @@ import { AuthProvider, useAuth } from "./utils/authContext";
 import Login from "./components/Login";
 import Logout from "./components/Logout";
 import ProtectedPage from "./components/ProtectedPage";
-
-const ProtectedRoute = ({ children }) => {
-  const { user } = useAuth();
-  console.log("what is here i am getting " + user);
-  return user ? children : <Navigate to="/" />;
-};
+import { Navbar } from "./components/Navbar";
+import {AboutUs} from "./components/AboutUs";
 
 const NavLinks = () => {
   const { user } = useAuth();
 
   return (
-    <nav>
-      {user ? (
-        <>
-          <a href="/protected">Protected Page</a>
-        </>
-      ) : (
-        <a href="/">Login</a>
-      )}
-    </nav>
+    <Navbar />
   );
 };
 
@@ -41,15 +29,11 @@ const App = () => {
           <NavLinks />
           <Routes>
             <Route path="/" element={<Login />} />
-            <Route
-              path="/protected"
-              element={
-                <ProtectedRoute>
-                  <ProtectedPage />
-                  <Logout />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/AboutUs" element={<AboutUs />} />
+
+            {/* No ProtectedRoute here anymore */}
+            <Route path="/Magazine" element={<ProtectedPage />} />
+            <Route path="/logout" element={<Logout />} />
           </Routes>
         </Router>
       </AuthProvider>
