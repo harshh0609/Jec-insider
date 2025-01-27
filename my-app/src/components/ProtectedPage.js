@@ -40,7 +40,7 @@ function App() {
       let query = supabase.from("facts").select("*");
   
       // Only show approved facts to regular users
-      if (user?.email !== "ayushoficial04@gmail.com") {
+      if (user?.email !== "jecinsider@gmail.com") {
         query = query.eq("approved", true);
       }
   
